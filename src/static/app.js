@@ -13,18 +13,38 @@ document.addEventListener("DOMContentLoaded", () => {
       // Clear loading message
       activitiesList.innerHTML = "";
 
+      // Reset activity select (avoid duplicate options)
+      activitySelect.innerHTML = '<option value="">Select an activity</option>';
+
       // Populate activities list
       Object.entries(activities).forEach(([name, details]) => {
         const activityCard = document.createElement("div");
         activityCard.className = "activity-card";
 
-        const spotsLeft = details.max_participants - details.participants.length;
+        const spotsLeft = details.max_participants - (details.participants?.length || 0);
+
+        // build participants section (bulleted list or empty state)
+        let participantsHtml;
+        if (details.participants && details.participants.length > 0) {
+          const items = details.participants
+            .map((p) => `<li>${escapeHtml(p)}</li>`)
+            .join("");
+          participantsHtml = `
+            <div class="participants">
+              <h5>Participants</h5>
+              <ul>${items}</ul>
+            </div>
+          `;
+        } else {
+          participantsHtml = `<div class="participants empty">No participants yet</div>`;
+        }
 
         activityCard.innerHTML = `
-          <h4>${name}</h4>
-          <p>${details.description}</p>
-          <p><strong>Schedule:</strong> ${details.schedule}</p>
+          <h4>${escapeHtml(name)}</h4>
+          <p>${escapeHtml(details.description)}</p>
+          <p><strong>Schedule:</strong> ${escapeHtml(details.schedule)}</p>
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
+          ${participantsHtml}
         `;
 
         activitiesList.appendChild(activityCard);
@@ -39,6 +59,17 @@ document.addEventListener("DOMContentLoaded", () => {
       activitiesList.innerHTML = "<p>Failed to load activities. Please try again later.</p>";
       console.error("Error fetching activities:", error);
     }
+  }
+
+  // simple HTML escape to avoid injection when using innerHTML
+  function escapeHtml(str) {
+    if (str == null) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   }
 
   // Handle form submission
